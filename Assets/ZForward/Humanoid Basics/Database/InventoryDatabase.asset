@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 621ae371428d0734ba7e01b4454b1e76, type: 3}
+  m_Name: InventoryDatabase
+  m_EditorClassIdentifier: 
+  itemDatabase:
+  - name: Glock
+    id: 0
+    description: 
+    itemSprite: {fileID: 21300000, guid: 140aab8fd086d9c49af7522eb47e614f, type: 3}
+    itemType: 2
+    healthBoost: 0
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 0}
+      soundVolume: 1
+  - name: Magnum
+    id: 1
+    description: 
+    itemSprite: {fileID: 21300000, guid: e03dd2c0426c7284e9bad422aeb3869f, type: 3}
+    itemType: 2
+    healthBoost: 0
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 0}
+      soundVolume: 1
+  - name: SMG
+    id: 2
+    description: 
+    itemSprite: {fileID: 21300000, guid: bf72ea173a33fc0488321425398c2a56, type: 3}
+    itemType: 2
+    healthBoost: 0
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 0}
+      soundVolume: 1
+  - name: M16A3
+    id: 3
+    description: 
+    itemSprite: {fileID: 21300000, guid: 8678ad5928c3b764d82f5f44db4c629f, type: 3}
+    itemType: 2
+    healthBoost: 0
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 0}
+      soundVolume: 1
+  - name: Shotgun
+    id: 4
+    description: 
+    itemSprite: {fileID: 21300000, guid: f70d090d9dbd91d4d80ff3d2ac667ea9, type: 3}
+    itemType: 2
+    healthBoost: 0
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 0}
+      soundVolume: 1
+  - name: Rocket Launcher
+    id: 5
+    description: 
+    itemSprite: {fileID: 21300000, guid: 6aba5d1d8e9f59a4890ba04c88d7d3d6, type: 3}
+    itemType: 2
+    healthBoost: 0
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 0}
+      soundVolume: 1
+  - name: Health
+    id: 6
+    description: Healths the user
+    itemSprite: {fileID: 21300000, guid: ce78ac8966caef844a7c7bdf0ef52f07, type: 3}
+    itemType: 0
+    healthBoost: 50
+    itemSettings:
+      maxItemCount: 0
+    itemSounds:
+      useSound: {fileID: 8300000, guid: 3c754f53f70eaa747bd89abe38427692, type: 3}
+      soundVolume: 1
