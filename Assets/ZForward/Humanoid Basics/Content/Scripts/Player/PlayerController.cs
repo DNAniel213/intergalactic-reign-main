@@ -47,7 +47,9 @@ namespace Humanoid_Basics.Player
         public float mouseSensitivity = 3;
         
         //
+        [SyncVar]
         public Vector2 movementAxis;
+        [SyncVar]
         public Vector2 cameraAxis;
 
         [HideInInspector]
@@ -105,31 +107,12 @@ namespace Humanoid_Basics.Player
             if (!Application.isPlaying) { return; }
             if (Input.GetMouseButtonDown(0)) { Cursor.lockState = CursorLockMode.Locked; }
             
-            if (!humanoidCore.isAttacking)
-            {
-                movementAxis.x = Input.GetAxisRaw("Horizontal");
-                movementAxis.y = Input.GetAxisRaw("Vertical");
-                humanoidCore.SetXAxis(Input.GetAxisRaw("Horizontal"));
-                humanoidCore.SetYAxis(Input.GetAxisRaw("Vertical"));
-
-                // Update Camera 2.0
-                cameraCore.SetCameraX(Input.GetAxisRaw("Mouse X") * mouseSensitivity);
-                cameraCore.SetCameraZ(Input.GetAxisRaw("Mouse Y") * -mouseSensitivity);
-            }
-            else
-            {
-                humanoidCore.SetXAxis(0);
-                humanoidCore.SetYAxis(0);
-
-                // Update Camera 2.0
-                cameraCore.SetCameraX(0);
-                cameraCore.SetCameraZ(0);
-            }
 
 
 
             if(isLocalPlayer)
             {
+                CmdGetControl();
                 HandleCameraTarget();
                 PlayerMovement();
                 HandleKeyPress();
@@ -152,6 +135,45 @@ namespace Humanoid_Basics.Player
             
         }
 
+        [Command]
+        void CmdGetControl()
+        {
+            RpcGetControl();
+        }
+
+        [ClientRpc]
+        void RpcGetControl()
+        {
+            GetControl();
+        }
+
+        void GetControl()
+        {
+
+            if (!humanoidCore.isAttacking && isLocalPlayer)
+            {
+
+                movementAxis.x = Input.GetAxisRaw("Horizontal");
+                movementAxis.y = Input.GetAxisRaw("Vertical");
+                humanoidCore.SetXAxis(Input.GetAxisRaw("Horizontal"));
+                humanoidCore.SetYAxis(Input.GetAxisRaw("Vertical"));
+
+                // Update Camera 2.0
+                cameraCore.SetCameraX(Input.GetAxisRaw("Mouse X") * mouseSensitivity);
+                cameraCore.SetCameraZ(Input.GetAxisRaw("Mouse Y") * -mouseSensitivity);
+            }   
+            else if(isLocalPlayer)
+            {
+                humanoidCore.SetXAxis(0);
+                humanoidCore.SetYAxis(0);
+
+                // Update Camera 2.0
+                cameraCore.SetCameraX(0);
+                cameraCore.SetCameraZ(0);
+            }
+
+        }
+
         private void LateUpdate()
         {
             if(isLocalPlayer)
@@ -166,151 +188,7 @@ namespace Humanoid_Basics.Player
             RpcLateUpdate();
         }
 
-        [ClientRpc]
-        private void RpcLateUpdate()
-        {
-            LocalLateUpdate();
-        }
-
-        private void LocalLateUpdate()
-        {
-            if (!Application.isPlaying) { return; }
-
-            if (humanoidCore.humanoidType == HumanoidCore.Type.Npc) return;
-            if (humanoidCore.humanoidStatus == HumanoidCore.Status.Dead) { return; }
-            
-            if (humanoidCore.aim) 
-            {
-                var cameraTransform = cameraCore.cameraObject.transform;
-                var cameraTransformForward = cameraTransform.forward;
-                var spineOffset = cameraTransformForward - cameraTransform.up / 5;
-                var armsOffset = cameraTransformForward;
-                
-                // Ik Head Look At Position
-                if (humanoidCore.canBox && !humanoidCore.equippedWeapon)
-                {
-                    humanoidCore.ikControl.lookAtPosition = humanoidCore.ikControl.head.position + cameraTransform.right * humanoidCore.boxingAimOffset;
-                }
-                else
-                {
-                    humanoidCore.ikControl.lookAtPosition = humanoidCore.ikControl.head.position + humanoidCore.aimHelper.forward;
-                }
-                
-                if (cameraCore.targetOffset.x <= 0.0f)
-                {
-                    armsOffset -= cameraTransform.right / 3 ;
-                }
-                spineOffset.y = Mathf.Clamp(spineOffset.y, -0.4f, 0.35f);
-                
-                if (humanoidCore.SomethingInFront())
-                {
-                    spineOffset.y = Mathf.Clamp(spineOffset.y, 0, 0f);
-                    armsOffset.y = Mathf.Clamp(armsOffset.y, 0, 1);
-                }
-                
-                // Auto Lean
-                if (autoLean)
-                {
-                    if (SomethingInFrontAim(2) && humanoidCore.currentWeapon && !humanoidCore.currentWeapon.reloadProgress)
-                    {
-                        if (cameraCore.targetOffset.x > 0.0f)
-                        {
-                            humanoidCore.lean = -.2f;
-                        }
-                        else
-                        {
-                            humanoidCore.lean = .2f;
-                        }
-                    }
-                    else
-                    {
-                        humanoidCore.lean = 0;
-                    }
-                }
-                
-                if (humanoidCore.crouch)
-                {
-                    armsOffset.y = Mathf.Clamp(armsOffset.y, -.7f, 0.4f);
-                    if (cameraCore.targetOffset.x <= 0.0f)
-                    {
-                        spineOffset -= cameraTransform.right * .3f;
-                    }
-                    else
-                    {
-                        spineOffset += cameraTransform.right * .3f;
-                    }
-                    if (!humanoidCore.SomethingInFront())
-                    {
-                        spineOffset.y = Mathf.Clamp(spineOffset.y, -.5f, -.5f);
-                    }
-                }
-                
-                humanoidCore.aimRotationAux = Quaternion.Lerp(humanoidCore.aimRotationAux, Quaternion.LookRotation((humanoidCore.transformToRotate.position + armsOffset + cameraTransform.up * humanoidCore.recoil / 10) - humanoidCore.transformToRotate.position), 10 * Time.deltaTime);
-
-                if (humanoidCore.canBox && !humanoidCore.equippedWeapon) return;
-                humanoidCore.aimRotationSpineAux = Quaternion.Lerp(humanoidCore.aimRotationSpineAux, Quaternion.LookRotation((humanoidCore.transformToRotate.position + spineOffset + cameraTransform.up * humanoidCore.recoil / 5) - humanoidCore.transformToRotate.position) * new Quaternion(0, 0.5f, humanoidCore.lean, 1) * humanoidCore.startSpineRot, 10 * Time.deltaTime);
-            }
-            else
-            {
-                humanoidCore.lean = 0;
-                
-                // Ik Head Look At Position
-                humanoidCore.ikControl.lookAtPosition = humanoidCore.ikControl.head.position + cameraCore.cameraObject.transform.forward;
-                
-                humanoidCore.aimRotationSpineAux = Quaternion.Lerp(humanoidCore.aimRotationSpineAux, humanoidCore.aimHelperSpine.rotation, 20 * Time.deltaTime);
-
-                Vector3 off;
-                switch (humanoidCore.spineFacingDirection)
-                {
-                    case HumanoidCore.Direction.Forward:
-                        off = humanoidCore.aimHelperSpine.forward;
-                        break;
-                    case HumanoidCore.Direction.Back:
-                        off = -humanoidCore.aimHelperSpine.forward;
-                        break;
-                    case HumanoidCore.Direction.Up:
-                        off = humanoidCore.aimHelperSpine.up;
-                        break;
-                    case HumanoidCore.Direction.Down:
-                        off = -humanoidCore.aimHelperSpine.up;
-                        break;
-                    case HumanoidCore.Direction.Left:
-                        off = -humanoidCore.aimHelperSpine.right;
-                        break;
-                    case HumanoidCore.Direction.Right:
-                        off = humanoidCore.aimHelperSpine.right;
-                        break;
-                    default:
-                        off = Vector3.zero;
-                        break;
-                }
-
-                off.y = Mathf.Clamp(off.y, 0, 5);
-                if (humanoidCore.crouch)
-                {
-                    off -= humanoidCore.transformToRotate.right * 0.3f;
-                }
-            
-                humanoidCore.aimRotationAux = Quaternion.Lerp(humanoidCore.aimRotationAux, Quaternion.LookRotation((humanoidCore.aimHelper.position + off) - humanoidCore.aimHelper.position), 10 * Time.deltaTime);
-
-            }
-
-            if (humanoidCore.playerAnimator.enabled)
-                humanoidCore.aimHelperSpine.rotation = humanoidCore.aimRotationSpineAux;
-
-        }
-
-        [Command]
-        void CmdPlayerMovement()
-        {
-            RpcPlayerMovement();
-        }
-
-        [ClientRpc]
-        void RpcPlayerMovement()
-        {
-            PlayerMovement();
-        }
+       
 
         private void PlayerMovement()
         {
@@ -535,6 +413,151 @@ namespace Humanoid_Basics.Player
             cameraCore.targetOffset.x *= -1;
             originalSide = cameraCore.targetOffset.x;
         }
-        
+
+      [ClientRpc]
+        private void RpcLateUpdate()
+        {
+            LocalLateUpdate();
+        }
+
+        private void LocalLateUpdate()
+        {
+            if (!Application.isPlaying) { return; }
+
+            if (humanoidCore.humanoidType == HumanoidCore.Type.Npc) return;
+            if (humanoidCore.humanoidStatus == HumanoidCore.Status.Dead) { return; }
+            
+            if (humanoidCore.aim) 
+            {
+                var cameraTransform = cameraCore.cameraObject.transform;
+                var cameraTransformForward = cameraTransform.forward;
+                var spineOffset = cameraTransformForward - cameraTransform.up / 5;
+                var armsOffset = cameraTransformForward;
+                
+                // Ik Head Look At Position
+                if (humanoidCore.canBox && !humanoidCore.equippedWeapon)
+                {
+                    humanoidCore.ikControl.lookAtPosition = humanoidCore.ikControl.head.position + cameraTransform.right * humanoidCore.boxingAimOffset;
+                }
+                else
+                {
+                    humanoidCore.ikControl.lookAtPosition = humanoidCore.ikControl.head.position + humanoidCore.aimHelper.forward;
+                }
+                
+                if (cameraCore.targetOffset.x <= 0.0f)
+                {
+                    armsOffset -= cameraTransform.right / 3 ;
+                }
+                spineOffset.y = Mathf.Clamp(spineOffset.y, -0.4f, 0.35f);
+                
+                if (humanoidCore.SomethingInFront())
+                {
+                    spineOffset.y = Mathf.Clamp(spineOffset.y, 0, 0f);
+                    armsOffset.y = Mathf.Clamp(armsOffset.y, 0, 1);
+                }
+                
+                // Auto Lean
+                if (autoLean)
+                {
+                    if (SomethingInFrontAim(2) && humanoidCore.currentWeapon && !humanoidCore.currentWeapon.reloadProgress)
+                    {
+                        if (cameraCore.targetOffset.x > 0.0f)
+                        {
+                            humanoidCore.lean = -.2f;
+                        }
+                        else
+                        {
+                            humanoidCore.lean = .2f;
+                        }
+                    }
+                    else
+                    {
+                        humanoidCore.lean = 0;
+                    }
+                }
+                
+                if (humanoidCore.crouch)
+                {
+                    armsOffset.y = Mathf.Clamp(armsOffset.y, -.7f, 0.4f);
+                    if (cameraCore.targetOffset.x <= 0.0f)
+                    {
+                        spineOffset -= cameraTransform.right * .3f;
+                    }
+                    else
+                    {
+                        spineOffset += cameraTransform.right * .3f;
+                    }
+                    if (!humanoidCore.SomethingInFront())
+                    {
+                        spineOffset.y = Mathf.Clamp(spineOffset.y, -.5f, -.5f);
+                    }
+                }
+                
+                humanoidCore.aimRotationAux = Quaternion.Lerp(humanoidCore.aimRotationAux, Quaternion.LookRotation((humanoidCore.transformToRotate.position + armsOffset + cameraTransform.up * humanoidCore.recoil / 10) - humanoidCore.transformToRotate.position), 10 * Time.deltaTime);
+
+                if (humanoidCore.canBox && !humanoidCore.equippedWeapon) return;
+                humanoidCore.aimRotationSpineAux = Quaternion.Lerp(humanoidCore.aimRotationSpineAux, Quaternion.LookRotation((humanoidCore.transformToRotate.position + spineOffset + cameraTransform.up * humanoidCore.recoil / 5) - humanoidCore.transformToRotate.position) * new Quaternion(0, 0.5f, humanoidCore.lean, 1) * humanoidCore.startSpineRot, 10 * Time.deltaTime);
+            }
+            else
+            {
+                humanoidCore.lean = 0;
+                
+                // Ik Head Look At Position
+                humanoidCore.ikControl.lookAtPosition = humanoidCore.ikControl.head.position + cameraCore.cameraObject.transform.forward;
+                
+                humanoidCore.aimRotationSpineAux = Quaternion.Lerp(humanoidCore.aimRotationSpineAux, humanoidCore.aimHelperSpine.rotation, 20 * Time.deltaTime);
+
+                Vector3 off;
+                switch (humanoidCore.spineFacingDirection)
+                {
+                    case HumanoidCore.Direction.Forward:
+                        off = humanoidCore.aimHelperSpine.forward;
+                        break;
+                    case HumanoidCore.Direction.Back:
+                        off = -humanoidCore.aimHelperSpine.forward;
+                        break;
+                    case HumanoidCore.Direction.Up:
+                        off = humanoidCore.aimHelperSpine.up;
+                        break;
+                    case HumanoidCore.Direction.Down:
+                        off = -humanoidCore.aimHelperSpine.up;
+                        break;
+                    case HumanoidCore.Direction.Left:
+                        off = -humanoidCore.aimHelperSpine.right;
+                        break;
+                    case HumanoidCore.Direction.Right:
+                        off = humanoidCore.aimHelperSpine.right;
+                        break;
+                    default:
+                        off = Vector3.zero;
+                        break;
+                }
+
+                off.y = Mathf.Clamp(off.y, 0, 5);
+                if (humanoidCore.crouch)
+                {
+                    off -= humanoidCore.transformToRotate.right * 0.3f;
+                }
+            
+                humanoidCore.aimRotationAux = Quaternion.Lerp(humanoidCore.aimRotationAux, Quaternion.LookRotation((humanoidCore.aimHelper.position + off) - humanoidCore.aimHelper.position), 10 * Time.deltaTime);
+
+            }
+
+            if (humanoidCore.playerAnimator.enabled)
+                humanoidCore.aimHelperSpine.rotation = humanoidCore.aimRotationSpineAux;
+
+        }
+
+        [Command]
+        void CmdPlayerMovement()
+        {
+            RpcPlayerMovement();
+        }
+
+        [ClientRpc]
+        void RpcPlayerMovement()
+        {
+            PlayerMovement();
+        }   
     }
 }

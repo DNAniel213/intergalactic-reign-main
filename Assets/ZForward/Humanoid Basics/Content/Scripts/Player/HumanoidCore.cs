@@ -205,12 +205,12 @@ namespace Humanoid_Basics.Player
             
             if (!Application.isPlaying) { return; }
             //if (Input.GetMouseButtonDown(0)) { Cursor.lockState = CursorLockMode.Locked; }
-            AnimatorMovementState();
             Climb();
             RagdollWhenFall();
             StandUp();
             if(isLocalPlayer)
             {
+            AnimatorMovementState();
                 PlayerMovement();
                 //CmdPlayerMovement();
             }

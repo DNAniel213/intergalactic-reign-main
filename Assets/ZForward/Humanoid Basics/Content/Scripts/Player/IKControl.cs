@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.Serialization;
+using Mirror;
 
 namespace Humanoid_Basics.Player
 {
-    public class IKControl : MonoBehaviour
+    public class IKControl : NetworkBehaviour
     {
 
         [Header("Humanoid Core")] public HumanoidCore humanoidCore;
@@ -67,7 +68,43 @@ namespace Humanoid_Basics.Player
             FeetPositionSolver(leftFootPosition, ref leftFootIkPosition, ref leftFootIkRotation);
         }
 
-        private void OnAnimatorIK(int layerIndex)
+        void OnAnimatorIK(int layerIndex)
+        {
+            //if(isLocalPlayer)
+               // DoIK(layerIndex);
+        }
+
+       
+
+        private void FeetPositionSolver(Vector3 skyPosition, ref Vector3 feetIkPosition, ref Quaternion feetIkRotation)
+        {
+            RaycastHit feetOutHit;
+
+            if (debug)
+            {
+                Debug.DrawLine(skyPosition, skyPosition + Vector3.down * (raycastDownDistance + heightFromGroundRaycast),Color.yellow);
+            }
+
+            if (Physics.Raycast(skyPosition, Vector3.down, out feetOutHit,
+                raycastDownDistance + heightFromGroundRaycast, environmentLayer))
+            {
+                feetIkPosition = skyPosition;
+                feetIkPosition.y = feetOutHit.point.y + pelvisOffset;
+                feetIkRotation = Quaternion.FromToRotation(Vector3.up, feetOutHit.normal) * transform.rotation;
+
+                return;
+            }
+            
+            feetIkPosition = Vector3.zero; //
+        }
+
+        private void AdjustFeetTarget(ref Vector3 feetPositions, HumanBodyBones foot)
+        {
+            feetPositions = animator.GetBoneTransform(foot).position;
+            feetPositions.y = transform.position.y + heightFromGroundRaycast;
+        }
+
+         private void DoIK(int layerIndex)
         {
             if (!animator) return;
 
@@ -164,6 +201,8 @@ namespace Humanoid_Basics.Player
 
         }
 
+        
+
         private bool CanMovePelvis()
         {
             if (!enableFeetIkPelvisAdjustment) return false;
@@ -243,34 +282,6 @@ namespace Humanoid_Basics.Player
             animator.bodyPosition = newPelvisPosition;
             
             lastPelvisPositionY = animator.bodyPosition.y;
-        }
-
-        private void FeetPositionSolver(Vector3 skyPosition, ref Vector3 feetIkPosition, ref Quaternion feetIkRotation)
-        {
-            RaycastHit feetOutHit;
-
-            if (debug)
-            {
-                Debug.DrawLine(skyPosition, skyPosition + Vector3.down * (raycastDownDistance + heightFromGroundRaycast),Color.yellow);
-            }
-
-            if (Physics.Raycast(skyPosition, Vector3.down, out feetOutHit,
-                raycastDownDistance + heightFromGroundRaycast, environmentLayer))
-            {
-                feetIkPosition = skyPosition;
-                feetIkPosition.y = feetOutHit.point.y + pelvisOffset;
-                feetIkRotation = Quaternion.FromToRotation(Vector3.up, feetOutHit.normal) * transform.rotation;
-
-                return;
-            }
-            
-            feetIkPosition = Vector3.zero; //
-        }
-
-        private void AdjustFeetTarget(ref Vector3 feetPositions, HumanBodyBones foot)
-        {
-            feetPositions = animator.GetBoneTransform(foot).position;
-            feetPositions.y = transform.position.y + heightFromGroundRaycast;
         }
     }
 }

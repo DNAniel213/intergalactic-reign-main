@@ -315,6 +315,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5802f8d7eaf9b9748a7bc8b0158636c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   humanoidCore: {fileID: 995782727453853156}
   defaultHandLerpSpeed: 6
   weaponHandLerpSpeed: 10
